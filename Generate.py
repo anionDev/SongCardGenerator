@@ -2,7 +2,6 @@ import argparse
 import os
 import random
 import hashlib
-from datetime import datetime
 from PIL import Image, ImageDraw, ImageFont
 from mutagen.easyid3 import EasyID3 
 from ScriptCollection.GeneralUtilities import GeneralUtilities
@@ -26,7 +25,7 @@ class Song:
     def get_key(self)->str:
         return f"{self.year}_{self.artists}_{self.title}"
     
-class GigstarGenerator:
+class SongCardGenerator:
 
     songsfolder:str
     targetfolder:str
@@ -179,11 +178,11 @@ def run_cli():
     parser.add_argument("-n", "--number", action="store_true",default=False,required=False)
 
     # Parse arguments
-    gg:GigstarGenerator=None
+    scg:SongCardGenerator=None
     args = parser.parse_args()
-    gg=GigstarGenerator(args.songsfolder,args.targetfolder,args.fontregular,args.fontbold,args.fontitalic,args.verbose,args.number)
-    #gg=GigstarGenerator("songsfolder","targetfolder","arial.ttf","arialbd.ttf","ariali.ttf",False,False)
-    gg.generate()
+    scg=SongCardGenerator(args.songsfolder,args.targetfolder,args.fontregular,args.fontbold,args.fontitalic,args.verbose,args.number)
+    #scg=HitsterGenerator("songsfolder","targetfolder","arial.ttf","arialbd.ttf","ariali.ttf",False,False)
+    scg.generate()
 
 if __name__ == "__main__":
     run_cli()
