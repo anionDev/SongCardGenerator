@@ -1,6 +1,6 @@
 # SongsCardsGenerator
 
-SongsCardsGenerator is a simple tool to generate cards for games like Hitster based on your own music-folder.
+SongsCardsGenerator is a simple tool to generate cards for games like Hitster, Marimic or Play Hit based on your own music-folder.
 
 ## Demo
 
@@ -19,6 +19,7 @@ python Generate.py -s /.../songsfolder -t ./targetfolder -r /.../arial.ttf -b /.
 ## Remarks
 
 - Caution: This scripts needs a clean target-folder. So any already existing file in the given targetfolder will be removed.
+- This script generates only pictures-files. It does not generate any QR-code and it also does not provide any music.
 - For each subfolder in the songs-folder a cards-set in targetfolder is generated. So it is required to have the music-files in a subfolder of the songs-folder.
 - Only mp3-files are supported.
 - The content (year, artist and songname) will be extracted from the mp3-file-metadata.
