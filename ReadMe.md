@@ -4,7 +4,7 @@ SongCardGenerator is a simple CLI-tool to generate cards for games like Hitster,
 
 ## Demo
 
-After generating some cards you have some picture-files like this for example:
+After generating the cards you have some picture-files like this, for example:
 
 ![](./attachments/image.png "Generated files")
 

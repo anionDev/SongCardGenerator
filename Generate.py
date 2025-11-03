@@ -37,9 +37,13 @@ class SongCardGenerator:
     number:bool
     background_colors:list[list[int]]=[#rgb-values
         [70, 52, 235], #blue
-        [250, 98, 22], #orange
-        [250, 49, 35], #red
         [111, 50, 168], #purple
+        [250, 49, 35], #red
+        [250, 98, 22], #orange
+        [252, 204, 28], #yellow
+        [81, 155, 252], #bright blue
+        [245, 156, 54], #bright orange
+        [182, 110, 250], #bright purple
     ]
 
     def __init__(self,songsfolder:str,targetfolder:str,fontregular:str,fontbold:str,fontitalic:str,verbose:bool,number:bool):
@@ -64,9 +68,11 @@ class SongCardGenerator:
         return results[0]
 
     @GeneralUtilities.check_arguments
-    def __generate_properties_file(self,target_file:str,title:str,interpret:str,year:int,number:int)->None:
+    def __generate_properties_file(self,target_file:str,title:str,interpret:str,year:int,number:int,hash:str)->None:
         GeneralUtilities.assert_file_does_not_exist(target_file)
-        color:list[int]=random.choice(self.background_colors)
+        GeneralUtilities.assert_condition(len(self.background_colors)==8,"Can not calculate color due to changed color-set")
+        color_index=int(hash[0], 16)* 8 // 16
+        color:list[int]= self.background_colors[color_index]
         size=400
         text_top=interpret
         text_middle=str(year)
@@ -160,7 +166,7 @@ class SongCardGenerator:
                 filename:str=f"{hash}.png"
                 if self.number:
                     filename=f"{str(number).zfill(amount_of_digits)}_{filename}"
-                self.__generate_properties_file(os.path.join(set_target_folder,filename),song.title,song.artists,song.year,number)
+                self.__generate_properties_file(os.path.join(set_target_folder,filename),song.title,song.artists,song.year,number,hash)
                 if not song.year in generated_years:
                     generated_years[song.year]=0
                 generated_years[song.year]=generated_years[song.year]+1
@@ -184,7 +190,7 @@ def run_cli():
     scg:SongCardGenerator=None
     args = parser.parse_args()
     scg=SongCardGenerator(args.songsfolder,args.targetfolder,args.fontregular,args.fontbold,args.fontitalic,args.verbose,args.number)
-    #scg=HitsterGenerator("songsfolder","targetfolder","arial.ttf","arialbd.ttf","ariali.ttf",False,False)
+    #scg=SongCardGenerator("songsfolder","targetfolder","arial.ttf","arialbd.ttf","ariali.ttf",False,False)
     scg.generate()
 
 if __name__ == "__main__":
