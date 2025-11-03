@@ -40,7 +40,7 @@ class SongCardGenerator:
         [111, 50, 168], #purple
         [250, 49, 35], #red
         [250, 98, 22], #orange
-        [252, 204, 28], #yellow
+        [252, 205, 76], #yellow
         [81, 155, 252], #bright blue
         [245, 156, 54], #bright orange
         [182, 110, 250], #bright purple
