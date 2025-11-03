@@ -45,23 +45,25 @@ class SongCardGenerator:
     def __init__(self,songsfolder:str,targetfolder:str,fontregular:str,fontbold:str,fontitalic:str,verbose:bool,number:bool):
          self.songsfolder=GeneralUtilities.resolve_relative_path_from_current_working_directory( songsfolder)
          self.targetfolder=GeneralUtilities.resolve_relative_path_from_current_working_directory( targetfolder)
-         #self.prefixforlinks=prefixforlinks
          self.fontregular=GeneralUtilities.resolve_relative_path_from_current_working_directory(fontregular)
          self.fontbold=GeneralUtilities.resolve_relative_path_from_current_working_directory(fontbold)
          self.fontitalic=GeneralUtilities.resolve_relative_path_from_current_working_directory(fontitalic)
          self.verbose=verbose
          self.number=number
 
+    @GeneralUtilities.check_arguments
     def __get_properties_from_audio(self,audio:EasyID3,property,file:str)->list[str]:
         results=audio.get(property, [])
         GeneralUtilities.assert_condition(0<len(results),f"Expected property-values \"{property}\" in file \"{file}\".")
         return results
 
+    @GeneralUtilities.check_arguments
     def __get_property_from_audio(self,audio:EasyID3,property,file:str)->str:
         results=self.__get_properties_from_audio(audio,property,file)
         GeneralUtilities.assert_condition(1==len(results),f"Exactly 1 result expected for property-value \"{property}\" in file \"{file}\".")
         return results[0]
 
+    @GeneralUtilities.check_arguments
     def __generate_properties_file(self,target_file:str,title:str,interpret:str,year:int,number:int)->None:
         GeneralUtilities.assert_file_does_not_exist(target_file)
         color:list[int]=random.choice(self.background_colors)
@@ -71,12 +73,12 @@ class SongCardGenerator:
         text_bottom=title
         text_bottom_left=str(number)
         img = Image.new("RGB", (size, size), (color[0],color[1],color[2]))
-        draw = ImageDraw.Draw(img)
+        draw:ImageDraw.ImageDraw = ImageDraw.Draw(img)
 
-        font_artist = ImageFont.truetype(self.fontbold,30)
-        font_year = ImageFont.truetype(self.fontbold,150)
-        font_title = ImageFont.truetype(self.fontitalic,30)
-        font_number = ImageFont.truetype(self.fontregular,20)
+        font_artist:ImageFont.ImageFont = ImageFont.truetype(self.fontbold,30)
+        font_year :ImageFont.ImageFont= ImageFont.truetype(self.fontbold,150)
+        font_title :ImageFont.ImageFont= ImageFont.truetype(self.fontitalic,30)
+        font_number :ImageFont.ImageFont= ImageFont.truetype(self.fontregular,20)
 
         font_color=(0,0,0)
 
@@ -87,10 +89,10 @@ class SongCardGenerator:
         if self.number:
             self.__draw_text(draw,size,font_color,10, size -30,text_bottom_left, font_number, False)
 
-        # Speichern
         img.save(target_file)
 
-    def __draw_text(self,draw:ImageDraw,size,font_color,x, y, text,font, center:bool):
+    @GeneralUtilities.check_arguments
+    def __draw_text(self,draw:ImageDraw.ImageDraw,size,font_color,x, y, text,font, center:bool):
         """Zeichnet Text an Position (x, y), optional zentriert horizontal."""
         bbox = draw.textbbox((0, 0), text, font=font)
         w = bbox[2] - bbox[0] 
@@ -100,6 +102,7 @@ class SongCardGenerator:
             x = (size - w) / 2
         draw.text((x, y), text, font=font, fill=font_color)
 
+    @GeneralUtilities.check_arguments
     def __print_bar_chart(self,data:dict[int,int], max_width=30):
         min_key = min(data.keys())
         max_key = max(data.keys())
@@ -112,12 +115,14 @@ class SongCardGenerator:
             bar = "█" * bar_length
             print(f"{label:10} | {bar} ({value})")
 
+    @GeneralUtilities.check_arguments
     def __hash(self,input_str:str)->str:
         hash_object = hashlib.sha256(input_str.encode("utf-8"))
         hash_hex = hash_object.hexdigest()
         result= hash_hex[0:12]
         return result
 
+    @GeneralUtilities.check_arguments
     def generate(self)->None:
         GeneralUtilities.assert_folder_exists(self.songsfolder)
         GeneralUtilities.ensure_folder_exists_and_is_empty(self.targetfolder)
@@ -140,9 +145,8 @@ class SongCardGenerator:
                 year=int(year_str)
                 songs_all.append(Song(year,artists,title))
 
-            #remove duplicated items
             songs_set:list[Song]=[]
-            for song in songs_all:
+            for song in songs_all:#remove duplicated items
                 if not song in songs_set:
                     songs_set.append(song)
             songs_set.sort(key=lambda obj: obj.get_key())
@@ -165,12 +169,11 @@ class SongCardGenerator:
 
 
 def run_cli():
-    parser = argparse.ArgumentParser(description="Hitster card generator")
+    parser = argparse.ArgumentParser(description="Song-Card-Generator")
 
     # Add arguments
-    parser.add_argument("-s","--songsfolder",required=True)
-    parser.add_argument("-t","--targetfolder" ,required=True)
-    #parser.add_argument("-p","--prefixforlinks",required=True)
+    parser.add_argument("-s","--songsfolder",required=True,help="Source-folder for the songs. Remark: The content will be taken from each subfolder of this folder.")
+    parser.add_argument("-t","--targetfolder" ,required=True, help="Target-folder. Remark: The entire content of this folder will be removed.")
     parser.add_argument("-r","--fontregular",required=True)
     parser.add_argument("-b","--fontbold",required=True)
     parser.add_argument("-i","--fontitalic",required=True)

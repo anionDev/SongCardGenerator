@@ -1,6 +1,6 @@
-# SongsCardsGenerator
+# SongCardGenerator
 
-SongsCardsGenerator is a simple tool to generate cards for games like Hitster, Marimic or Play Hit based on your own music-folder.
+SongCardGenerator is a simple CLI-tool to generate cards for games like Hitster, Marimic or Play Hit based on your own music-folder.
 
 ## Demo
 
