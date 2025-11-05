@@ -13,6 +13,7 @@ After generating the cards you have some picture-files like this, for example:
 ```sh
 git clone https://github.com/anionDev/SongCardGenerator
 cd SongCardGenerator
+pip3 install -r requirements.txt
 python Generate.py -s /.../songsfolder -t ./targetfolder -r /.../arial.ttf -b /.../arialbd.ttf -i /.../ariali.ttf
 ```
 
