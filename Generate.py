@@ -140,7 +140,6 @@ class SongCardGenerator:
 
     @GeneralUtilities.check_arguments
     def __draw_text(self,draw:ImageDraw.ImageDraw,size,font_color,x, y, text:str,font:ImageFont.FreeTypeFont, center:bool):
-        """Zeichnet Text an Position (x, y), optional zentriert horizontal."""
         bbox = draw.textbbox((0, 0), text, font=font)
         w = bbox[2] - bbox[0] 
         h = bbox[3] - bbox[1]
