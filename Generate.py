@@ -217,15 +217,21 @@ class SongCardGenerator:
             songs_set.sort(key=lambda obj: obj.get_key())
 
             number=0
+
+            set_target_folder=os.path.join(self.targetfolder,setname)
+            GeneralUtilities.ensure_directory_exists(set_target_folder) 
+            tracklist_file:str=os.path.join(set_target_folder,"Tracklist.txt")
+            GeneralUtilities.ensure_file_exists(tracklist_file)
             for song in songs_all:
                 number=number+1
-                set_target_folder=os.path.join(self.targetfolder,setname)
-                GeneralUtilities.ensure_directory_exists(set_target_folder)
+                GeneralUtilities.append_line_to_file(tracklist_file,f"{str(number)};\"{song.artists}\";\"{song.title}\";{song.year}")
+                set_target_cards_folder=os.path.join(self.targetfolder,setname,"Cards")
+                GeneralUtilities.ensure_directory_exists(set_target_cards_folder)
                 hash:str=self.__hash(song.get_key())
                 filename:str=f"{hash}.png"
                 if self.number:
                     filename=f"{str(number).zfill(amount_of_digits)}_{filename}"
-                self.__generate_properties_file(os.path.join(set_target_folder,filename),song.title,song.artists,song.year,number,hash)
+                self.__generate_properties_file(os.path.join(set_target_cards_folder,filename),song.title,song.artists,song.year,number,hash)
                 if not song.year in generated_years:
                     generated_years[song.year]=0
                 generated_years[song.year]=generated_years[song.year]+1
