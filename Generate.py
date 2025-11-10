@@ -166,8 +166,16 @@ class SongCardGenerator:
             x = (size - w) / 2
         draw.text((x, y), text, font=font, fill=font_color)
 
+
     @GeneralUtilities.check_arguments
-    def __print_bar_chart(self,data:dict[int,int], max_width=30):
+    def __print_and_append(self,file:str,line:str):
+        GeneralUtilities.write_message_to_stdout(line)
+        GeneralUtilities.append_line_to_file(file,line)
+
+    @GeneralUtilities.check_arguments
+    def __print_bar_chart(self,data:dict[int,int],dispersion_file:str,amount_of_songs:int):
+        max_width=30
+        self.__print_and_append(dispersion_file,f"Dispersion:")
         min_key = min(data.keys())
         max_key = max(data.keys())
         for year in range(min_key, max_key + 1):
@@ -177,7 +185,8 @@ class SongCardGenerator:
         for label, value in sorted(data.items()):
             bar_length = int(value / max_value * max_width)
             bar = "█" * bar_length
-            GeneralUtilities.write_message_to_stdout(f"{label:10} | {bar} ({value})")
+            self.__print_and_append(dispersion_file,f"{label:10} | {bar} ({value})")
+        self.__print_and_append(dispersion_file,f"Amount of songs: {amount_of_songs}")
 
     @GeneralUtilities.check_arguments
     def __hash(self,input_str:str)->str:
@@ -242,12 +251,14 @@ class SongCardGenerator:
         GeneralUtilities.ensure_directory_exists(set_target_folder) 
         tracklist_file:str=os.path.join(set_target_folder,"Tracklist.txt")
         GeneralUtilities.ensure_file_exists(tracklist_file)
+        dispersion_file:str=os.path.join(set_target_folder,"Dispersion.txt")
+        GeneralUtilities.ensure_file_exists(dispersion_file)
         for song in songs_all:
             number=number+1
-            GeneralUtilities.append_line_to_file(tracklist_file,f"{str(number)};\"{song.artists}\";\"{song.title}\";{song.year}")
+            hash:str=self.__hash(song.get_key())
+            GeneralUtilities.append_line_to_file(tracklist_file,f"{str(number)};\"{song.artists}\";\"{song.title}\";{song.year};{hash}")
             set_target_cards_folder=os.path.join(set_target_folder,"Cards")
             GeneralUtilities.ensure_directory_exists(set_target_cards_folder)
-            hash:str=self.__hash(song.get_key())
             filename:str=f"{hash}.png"
             if self.number:
                 filename=f"{str(number).zfill(amount_of_digits)}_{filename}"
@@ -255,9 +266,7 @@ class SongCardGenerator:
             if not song.year in generated_years:
                 generated_years[song.year]=0
             generated_years[song.year]=generated_years[song.year]+1
-        GeneralUtilities.write_message_to_stdout(f"Dispersion:")
-        self.__print_bar_chart(generated_years)
-        GeneralUtilities.write_message_to_stdout(f"Amount of songs: {len(songs_all)}")
+        self.__print_bar_chart(generated_years,dispersion_file,len(songs_all))
 
 
 def run_cli():
