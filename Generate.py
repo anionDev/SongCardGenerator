@@ -1,4 +1,5 @@
 import argparse
+import sys
 import os
 import re
 import hashlib
@@ -27,6 +28,7 @@ class Song:
     
 class SongCardGenerator:
 
+    setname:str
     songsfolder:str
     targetfolder:str
     prefixforlinks:str
@@ -48,7 +50,8 @@ class SongCardGenerator:
     __max_len_per_line:int=29
     __max_length_of_text:int=54
 
-    def __init__(self,songsfolder:str,targetfolder:str,fontregular:str,fontbold:str,fontitalic:str,verbose:bool,number:bool):
+    def __init__(self,setname:str,songsfolder:str,targetfolder:str,fontregular:str,fontbold:str,fontitalic:str,verbose:bool,number:bool):
+         self.setname=setname
          self.songsfolder=GeneralUtilities.resolve_relative_path_from_current_working_directory( songsfolder)
          self.targetfolder=GeneralUtilities.resolve_relative_path_from_current_working_directory( targetfolder)
          self.fontregular=GeneralUtilities.resolve_relative_path_from_current_working_directory(fontregular)
@@ -57,12 +60,27 @@ class SongCardGenerator:
          self.verbose=verbose
          self.number=number
 
+
+    def __sanitize(self,input:str) -> str:
+        input=input.replace("Ã¡","á")
+        input=input.replace("Ã©","é")
+        input=input.replace("Ã\x84","Ä")
+        input=input.replace("Ã\x96","Ö")
+        input=input.replace("Ã\x9c","Ü")
+        input=input.replace("Ã¤","ä")
+        input=input.replace("Ã¶","ö")
+        input=input.replace("Ã¼","ü")
+        input=input.replace("Ã\x9f","ß")
+        input=input.replace(";","")
+        return input
+
     @GeneralUtilities.check_arguments
     def __get_properties_from_audio(self,audio:EasyID3,property,file:str)->list[str]:
         results=audio.get(property, [])
         GeneralUtilities.assert_condition(0<len(results),f"Expected property-values \"{property}\" in file \"{file}\".")
-        return results
-
+        result2=[self.__sanitize(x) for x in results]
+        return result2
+    
     @GeneralUtilities.check_arguments
     def __get_property_from_audio(self,audio:EasyID3,property,file:str)->str:
         results=self.__get_properties_from_audio(audio,property,file)
@@ -159,7 +177,7 @@ class SongCardGenerator:
         for label, value in sorted(data.items()):
             bar_length = int(value / max_value * max_width)
             bar = "█" * bar_length
-            print(f"{label:10} | {bar} ({value})")
+            GeneralUtilities.write_message_to_stdout(f"{label:10} | {bar} ({value})")
 
     @GeneralUtilities.check_arguments
     def __hash(self,input_str:str)->str:
@@ -190,59 +208,62 @@ class SongCardGenerator:
         
     @GeneralUtilities.check_arguments
     def generate(self)->None:
+        if self.verbose:
+            GeneralUtilities.write_message_to_stdout(f"setname: {self.setname}")
+            GeneralUtilities.write_message_to_stdout(f"songsfolder: {self.songsfolder}")
+            GeneralUtilities.write_message_to_stdout(f"targetfolder: {self.targetfolder}")
         GeneralUtilities.assert_folder_exists(self.songsfolder)
         GeneralUtilities.ensure_folder_exists_and_is_empty(self.targetfolder)
-        setfolders=GeneralUtilities.get_direct_folders_of_folder(self.songsfolder)
-        for set_folder in setfolders:
-            generated_years:dict[int,int]=dict[int,int]()
-            setname:str=os.path.basename(set_folder)
-            GeneralUtilities.write_message_to_stdout(f"Generate set \"{setname}\"...")
-            song_files=GeneralUtilities.get_direct_files_of_folder(set_folder)
-            GeneralUtilities.assert_condition(0<len(song_files),"No songs found")
-            amount_of_digits=len(str(len(song_files)))
+        generated_years:dict[int,int]=dict[int,int]()
+        setname:str=self.setname
+        GeneralUtilities.write_message_to_stdout(f"Generate set \"{setname}\"...")
+        song_files=GeneralUtilities.get_direct_files_of_folder(self.songsfolder)
+        GeneralUtilities.assert_condition(0<len(song_files),"No songs found")
+        amount_of_digits=len(str(len(song_files)))
 
-            songs_all:list[Song]=[]
-            for song in song_files:
-                GeneralUtilities.assert_condition(song.endswith(".mp3"),"Only mp3 songs are supported.")
-                audio = EasyID3(song) 
-                title =self.__truncate_length( self.__get_property_from_audio(audio,"title",song),self.__max_length_of_text)
-                artists=self.__truncate_length( ", ".join(sorted(self.__get_properties_from_audio(audio,"artist",song))),self.__max_length_of_text)
-                year= self.__get_year_from_audio(audio,song)
-                songs_all.append(Song(year,artists,title))
+        songs_all:list[Song]=[]
+        for song in song_files:
+            GeneralUtilities.assert_condition(song.endswith(".mp3"),"Only mp3 songs are supported.")
+            audio = EasyID3(song) 
+            title =self.__truncate_length( self.__get_property_from_audio(audio,"title",song),self.__max_length_of_text)
+            artists=self.__truncate_length( ", ".join(sorted(self.__get_properties_from_audio(audio,"artist",song))),self.__max_length_of_text)
+            year= self.__get_year_from_audio(audio,song)
+            songs_all.append(Song(year,artists,title))
 
-            songs_set:list[Song]=[]
-            for song in songs_all:#remove duplicated items
-                if not song in songs_set:
-                    songs_set.append(song)
-            songs_set.sort(key=lambda obj: obj.get_key())
+        songs_set:list[Song]=[]
+        for song in songs_all:#remove duplicated items
+            if not song in songs_set:
+                songs_set.append(song)
+        songs_set.sort(key=lambda obj: obj.get_key())
 
-            number=0
+        number=0
 
-            set_target_folder=os.path.join(self.targetfolder,setname)
-            GeneralUtilities.ensure_directory_exists(set_target_folder) 
-            tracklist_file:str=os.path.join(set_target_folder,"Tracklist.txt")
-            GeneralUtilities.ensure_file_exists(tracklist_file)
-            for song in songs_all:
-                number=number+1
-                GeneralUtilities.append_line_to_file(tracklist_file,f"{str(number)};\"{song.artists}\";\"{song.title}\";{song.year}")
-                set_target_cards_folder=os.path.join(self.targetfolder,setname,"Cards")
-                GeneralUtilities.ensure_directory_exists(set_target_cards_folder)
-                hash:str=self.__hash(song.get_key())
-                filename:str=f"{hash}.png"
-                if self.number:
-                    filename=f"{str(number).zfill(amount_of_digits)}_{filename}"
-                self.__generate_properties_file(os.path.join(set_target_cards_folder,filename),song.title,song.artists,song.year,number,hash)
-                if not song.year in generated_years:
-                    generated_years[song.year]=0
-                generated_years[song.year]=generated_years[song.year]+1
-            GeneralUtilities.write_message_to_stdout(f"Dispersion:")
-            self.__print_bar_chart(generated_years)
+        set_target_folder=self.targetfolder
+        GeneralUtilities.ensure_directory_exists(set_target_folder) 
+        tracklist_file:str=os.path.join(set_target_folder,"Tracklist.txt")
+        GeneralUtilities.ensure_file_exists(tracklist_file)
+        for song in songs_all:
+            number=number+1
+            GeneralUtilities.append_line_to_file(tracklist_file,f"{str(number)};\"{song.artists}\";\"{song.title}\";{song.year}")
+            set_target_cards_folder=os.path.join(set_target_folder,"Cards")
+            GeneralUtilities.ensure_directory_exists(set_target_cards_folder)
+            hash:str=self.__hash(song.get_key())
+            filename:str=f"{hash}.png"
+            if self.number:
+                filename=f"{str(number).zfill(amount_of_digits)}_{filename}"
+            self.__generate_properties_file(os.path.join(set_target_cards_folder,filename),song.title,song.artists,song.year,number,hash)
+            if not song.year in generated_years:
+                generated_years[song.year]=0
+            generated_years[song.year]=generated_years[song.year]+1
+        GeneralUtilities.write_message_to_stdout(f"Dispersion:")
+        self.__print_bar_chart(generated_years)
+        GeneralUtilities.write_message_to_stdout(f"Amount of songs: {len(songs_all)}")
 
 
 def run_cli():
     parser = argparse.ArgumentParser(description="Song-Card-Generator")
-
-    # Add arguments
+    
+    parser.add_argument("-l","--label",required=True,help="Name of set")
     parser.add_argument("-s","--songsfolder",required=True,help="Source-folder for the songs. Remark: The content will be taken from each subfolder of this folder.")
     parser.add_argument("-t","--targetfolder" ,required=True, help="Target-folder. Remark: The entire content of this folder will be removed.")
     parser.add_argument("-r","--fontregular",required=True)
@@ -251,11 +272,8 @@ def run_cli():
     parser.add_argument("-v", "--verbose", action="store_true",default=False,required=False)
     parser.add_argument("-n", "--number", action="store_true",default=False,required=False)
 
-    # Parse arguments
-    scg:SongCardGenerator=None
-    #args = parser.parse_args()
-    #scg=SongCardGenerator(args.songsfolder,args.targetfolder,args.fontregular,args.fontbold,args.fontitalic,args.verbose,args.number)
-    scg=SongCardGenerator("songsfolder","targetfolder","arial.ttf","arialbd.ttf","ariali.ttf",False,False)
+    args = parser.parse_args()
+    scg=SongCardGenerator(args.label,args.songsfolder,args.targetfolder,args.fontregular,args.fontbold,args.fontitalic,args.verbose,args.number)
     scg.generate()
 
 if __name__ == "__main__":
