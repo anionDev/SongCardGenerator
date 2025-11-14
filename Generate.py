@@ -72,6 +72,7 @@ class SongCardGenerator:
         input=input.replace("Ã¼","ü")
         input=input.replace("Ã\x9f","ß")
         input=input.replace(";","")
+        input=input.replace("\"","")
         return input
 
     @GeneralUtilities.check_arguments
@@ -256,7 +257,7 @@ class SongCardGenerator:
         for song in songs_all:
             number=number+1
             hash:str=self.__hash(song.get_key())
-            GeneralUtilities.append_line_to_file(tracklist_file,f"{str(number)};\"{song.artists}\";\"{song.title}\";{song.year};{hash}")
+            GeneralUtilities.append_line_to_file(tracklist_file,f"{str(number)};{song.artists};{song.title};{song.year};{hash}")
             set_target_cards_folder=os.path.join(set_target_folder,"Cards")
             GeneralUtilities.ensure_directory_exists(set_target_cards_folder)
             filename:str=f"{hash}.png"
